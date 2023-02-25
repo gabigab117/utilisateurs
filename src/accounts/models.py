@@ -10,19 +10,19 @@ from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 
 # il faut créer un manager lorsqu'on hérite de AbstractBaseUser ! ! !  !
 class MyUserManager(BaseUserManager):
-    def create_user(self, email, password=None, zip_code=None):
+    def create_user(self, email, password=None, zip_code=None, genre=None):
         if not email:
             raise ValueError("Vous devez entrer un email")
         if not zip_code.isdigit():
             raise ValueError("Des chiffres voyons !")
 
-        user = self.model(email=self.normalize_email(email), zip_code=zip_code)
+        user = self.model(email=self.normalize_email(email), zip_code=zip_code, genre=genre)
         user.set_password(password)
         user.save()
         return user
 
-    def create_superuser(self, email, password=None, zip_code=None):
-        user = self.create_user(email=email, password=password, zip_code=zip_code)
+    def create_superuser(self, email, password=None, zip_code=None, genre=None):
+        user = self.create_user(email=email, password=password, zip_code=zip_code, genre=genre)
         user.is_admin = True
         user.is_staff = True
         user.save()
@@ -32,6 +32,13 @@ class MyUserManager(BaseUserManager):
 # permet de modifier la façon dont vont s'authentifier les utilisateurs et ajouter des champs
 # avec AbstractBaseUser on n'a que password et last_login de défini
 class CustomUser(AbstractBaseUser):
+    HOMME = "HO"
+    FEMME = "FE"
+
+    GENRES = [
+        (HOMME, "Homme"),
+        (FEMME, "Femme")
+    ]
     # unique obligatoire car si se connecte avec le mail on ne peut pas avoir 2 fois le mm
     email = models.EmailField(unique=True, max_length=255, blank=False)
     # champ nécessaire pour que l'admin fonctionne
@@ -43,6 +50,7 @@ class CustomUser(AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     # je peux aussi ajouter les champs que je veux
     zip_code = models.CharField(max_length=5)
+    genre = models.CharField(max_length=5, choices=GENRES, null=True)
 
     # je veux utiliser le champ email pour se connecter
     USERNAME_FIELD = "email"
@@ -58,3 +66,6 @@ class CustomUser(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return True
+
+    class Meta:
+        verbose_name = "Utilisateur"
